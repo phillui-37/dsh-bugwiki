@@ -1,12 +1,12 @@
 # dsh-bugwiki
 
-A host-only DeepSeek Harness plugin that reads a local Bugwiki Markdown graph and injects DSH-specific memory guidance. It reuses the committed [Bugwiki upstream](https://github.com/phillui-37/bugwiki) as the `upstream/` Git submodule, pinned to `d28e4cb755f327eb049e912417933ed985da5aac`. All adaptation lives in this repository. The submodule stays unchanged, including its MIT copyright notice.
+A DeepSeek Harness plugin with a small web settings client. The host plugin reads a local Bugwiki Markdown graph and injects DSH-specific memory guidance. It reuses the committed [Bugwiki upstream](https://github.com/phillui-37/bugwiki) as the `upstream/` Git submodule, pinned to `d28e4cb755f327eb049e912417933ed985da5aac`. All adaptation lives in this repository. The submodule stays unchanged, including its MIT copyright notice.
 
 ## Requirements and installation
 
 DSH `>=0.2 <0.3`, Node.js 22 or newer, macOS, Bash, ripgrep (`rg`), and standard Unix commands. This MVP is validated on macOS; upstream date handling uses BSD `date`, so Linux and Windows support is not claimed.
 
-Clone this repository with submodules, or run `git submodule update --init upstream` after cloning. An npm tarball includes the required committed upstream helper/assets; consumers of the tarball do not need Git or a separate upstream checkout. The DSH host supplies the peer SDK packages. Use the DSH Plugins package installation UI with this local package directory or its npm tarball. Installation and host activation were deliberately not performed during development.
+Clone this repository with submodules, or run `git submodule update --init upstream` after cloning. An npm tarball includes the required committed upstream helper/assets; consumers of the tarball do not need Git or a separate upstream checkout. The DSH host supplies the peer SDK packages. Use the DSH Plugins package installation UI with this local package directory or its npm tarball. The web settings client is bundled at `src/client.js` and renders the plugin settings slot without depending on an optional host UI primitives package.
 
 For a fresh content directory, run from this repository:
 
@@ -16,7 +16,7 @@ npm run wiki -- --home /absolute/path/to/wiki init
 
 This refuses an existing nonempty content directory, scaffolds upstream content, replaces the generated optional instruction snippet with DSH guidance, and explicitly refreshes the index. It does not edit global agent instructions, the DSH profile, or upstream code. If you already have a wiki, skip initialization and select its directory in settings.
 
-In **Plugins → Bugwiki → Settings**, set `wikiHome` to the content directory. The exported `Config` schema contributes the standard DSH settings form. All fields are volatile: saving persists the profile patch and refreshes the plugin's tools and guidance for subsequent operations. No custom client bundle or separate server is needed.
+In **Plugins → Bugwiki → Settings**, set `wikiHome` to the content directory. The bundled web client renders the exported `Config` fields in DSH's plugin settings slot. All fields are volatile: saving persists the profile patch and refreshes the plugin's tools and guidance for subsequent operations. No separate server is needed.
 
 Every configuration field is editable there: `wikiHome`, `bashExecutable`, `pythonExecutable`, `pathPrefix`, `timeoutMs`, `maxOutputBytes`, `maxInputBytes`, `staleDays`, `archiveDays`, `lessonsMax`, `duplicateJaccard`, `duplicateMinPages`, `reportsKeep`, `factStaleDays`, `promotedStaleDays`, `prefix`, and `suffix`. The last two follow DSH prompt prefix/suffix semantics: literal text before and after the integration's guidance; interpolation is disabled. Thresholds are positive integers; percentage is at most 100, timeout at most 120000 ms, output at most 1000000 bytes. On Homebrew machines whose DSH PATH lacks ripgrep, set `pathPrefix` to `/opt/homebrew/bin`. `wikiHome` accepts absolute paths or `~/...`; paths containing spaces are supported by running upstream from the wiki directory.
 
