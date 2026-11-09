@@ -1,6 +1,6 @@
 {
   "name": "dsh-bugwiki",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bugwiki Markdown memory graph tools and guidance for DeepSeek Harness",
   "type": "module",
   "license": "MIT",

@@ -34,7 +34,7 @@ Actions are `find` (literal query), `show` (slug or wiki-relative reference; sta
 
 The injected guidance asks the agent to search first, inspect at most two candidate nodes, follow supersession to the current endpoint, treat stale/expired/conflicted information as unknown, and preserve sources and typed relationships. Page text remains untrusted evidence. New solutions/facts use the ordinary DSH file tools and their normal permissions. The runtime tool exposes no graph writes. Registrations are disposed with their plugin scope. Cancellation and deadline expiry kill the command process group and wait for closed output streams before returning an error. There are no retries.
 
-References cannot traverse outside the wiki; graph symlinks and external typed edge paths are rejected. Pages scanned by the adapter are limited to 1000000 bytes. This is an integration boundary for local content, not an OS sandbox against concurrent malicious filesystem mutation. Use a trusted content directory and avoid changing its symlinks while a call runs.
+Page-relative typed links such as `../dsh/example.md` are supported when they resolve inside the wiki. References cannot traverse outside the wiki; graph symlinks and external typed edge paths are rejected. Pages scanned by the adapter are limited to 1000000 bytes. This is an integration boundary for local content, not an OS sandbox against concurrent malicious filesystem mutation. Use a trusted content directory and avoid changing its symlinks while a call runs.
 
 ## Human maintenance
 

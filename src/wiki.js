@@ -48,6 +48,18 @@ async function assertContained(root, target) {
   if (actual !== root && !actual.startsWith(root + path.sep)) throw new Error('Wiki reference escapes wikiHome (including symlinks)')
   return actual
 }
+async function safeGraphReference(root, file, ref) {
+  if (!ref || ref.startsWith('-') || !/^[A-Za-z0-9_./:-]+$/.test(ref) || path.isAbsolute(ref)) throw new Error('Use a wiki-relative reference without shell syntax')
+  // Mirror upstream: page-relative files take precedence over wiki-root files.
+  for (const target of [path.resolve(path.dirname(file), ref), path.resolve(root, ref)]) {
+    if (target !== root && !target.startsWith(root + path.sep)) throw new Error('Wiki graph reference escapes wikiHome')
+    try {
+      if ((await stat(target)).isFile()) { await assertContained(root, target); return }
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error
+    }
+  }
+}
 async function checkGraph(root, dir, signal) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     signal?.throwIfAborted()
@@ -66,7 +78,7 @@ async function checkGraph(root, dir, signal) {
       const values = line.replace(/^(supersedes|contradicts|related):/, '').replace(/^\s*-\s*/, '').replace(/[\[\]"']/g, '').split(',')
       for (const value of values) {
         const ref = value.trim()
-        if (ref && ref !== 'null') safeReference(ref)
+        if (ref && ref !== 'null') await safeGraphReference(root, file, ref)
       }
     }
   }
