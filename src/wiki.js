@@ -10,7 +10,7 @@ export const defaults = Object.freeze({
   timeoutMs: 30000, maxOutputBytes: 32000,
   staleDays: 180, archiveDays: 90, lessonsMax: 12, duplicateJaccard: 55,
   duplicateMinPages: 8, reportsKeep: 30, factStaleDays: 90, promotedStaleDays: 90,
-  prefix: '', suffix: '',
+  prefix: '', suffix: '', followUpstreamSkill: false,
 })
 const thresholds = {
   staleDays: 'WIKI_STALE_DAYS', archiveDays: 'WIKI_ARCHIVE_DAYS',
@@ -28,6 +28,7 @@ export function settings(input = {}) {
   for (const key of ['wikiHome', 'bashExecutable', 'pathPrefix', 'prefix', 'suffix']) {
     if (typeof config[key] !== 'string' || config[key].includes('\0')) throw new Error(`${key} must be a string without NUL`)
   }
+  if (typeof config.followUpstreamSkill !== 'boolean') throw new Error('followUpstreamSkill must be a boolean')
   const home = config.wikiHome === '~' ? homedir() : config.wikiHome.startsWith('~/') ? path.join(homedir(), config.wikiHome.slice(2)) : config.wikiHome
   if (!path.isAbsolute(home)) throw new Error('wikiHome must be absolute or start with ~/')
   if (!path.isAbsolute(config.bashExecutable)) throw new Error('bashExecutable must be absolute')
