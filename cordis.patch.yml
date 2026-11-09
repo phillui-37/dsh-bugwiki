@@ -1,0 +1,7 @@
+- insert:
+    - id: dsh-bugwiki
+      name: dsh-bugwiki
+      config:
+        wikiHome: ~/.agents/wiki
+        prefix: ''
+        suffix: ''

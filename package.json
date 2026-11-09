@@ -1,0 +1,15 @@
+{
+  "name": "dsh-bugwiki",
+  "version": "0.1.0",
+  "description": "Bugwiki Markdown memory graph tools and guidance for DeepSeek Harness",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22", "dsh": ">=0.2 <0.3" },
+  "exports": { ".": "./src/index.js", "./locale/en": "./locale/en.json", "./locale/zh": "./locale/zh.json", "./icon": "./assets/icon.svg" },
+  "files": ["src", "locale", "assets", "cordis.patch.yml", "README.md", "LICENSE", "upstream/scripts/wiki", "upstream/scripts/dream-export.py", "upstream/assets", "upstream/PROTOCOL.md", "upstream/LICENSE"],
+  "scripts": { "test": "node --test tests/*.test.js", "wiki": "node src/cli.js", "check": "node --check src/index.js && node --check src/wiki.js && node --check src/cli.js && node --check src/dream.js" },
+  "peerDependencies": { "@deepseek-ai/cordis": "*", "@deepseek-ai/dsh-tools": "*", "@deepseek-ai/schemastery": "*" },
+  "devDependencies": { "@deepseek-ai/dsh-app-boot": "*", "@deepseek-ai/dsh-config-editor": "*", "@deepseek-ai/dsh-settings": "*", "@deepseek-ai/cordis-plugin-loader": "*", "@deepseek-ai/dsh-system-prompt": "*", "@deepseek-ai/dsh-tool-executor-native": "*", "@deepseek-ai/dsh-session": "*", "@deepseek-ai/dsh-llm": "*" },
+  "repository": { "type": "git", "url": "https://github.com/phillui-37/dsh-bugwiki.git" },
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}
