@@ -39,9 +39,10 @@ test('native settings persist Bugwiki options and restore registered tools on fr
     })
     ctx = await start()
     const describe = () => ctx.settings.describe().find(row => row.ns === 'bugwiki')
-    const fields = ['wikiHome', 'bashExecutable', 'pythonExecutable', 'pathPrefix', 'timeoutMs', 'maxOutputBytes', 'maxInputBytes', 'staleDays', 'archiveDays', 'lessonsMax', 'duplicateJaccard', 'duplicateMinPages', 'reportsKeep', 'factStaleDays', 'promotedStaleDays', 'prefix', 'suffix']
+    const fields = ['wikiHome', 'bashExecutable', 'pythonExecutable', 'pathPrefix', 'timeoutMs', 'maxOutputBytes', 'maxInputBytes', 'staleDays', 'archiveDays', 'lessonsMax', 'duplicateJaccard', 'duplicateMinPages', 'reportsKeep', 'factStaleDays', 'promotedStaleDays', 'followUpstreamSkill', 'prefix', 'suffix']
     const { schema } = describe()
     assert.deepEqual(Object.keys(schema.refs[schema.uid].dict).sort(), fields.sort())
+    assert.equal(describe().value.followUpstreamSkill, false)
     await ctx.settings.update('bugwiki', { prefix: 'SAVED_BUGWIKI_PREFIX', maxInputBytes: 1000 })
     const patch = await readFile(profile.patchPath, 'utf8')
     assert.match(patch, /SAVED_BUGWIKI_PREFIX/)

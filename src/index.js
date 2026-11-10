@@ -1,12 +1,14 @@
 import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { defaults, guidance, runWiki, settings } from './wiki.js'
+import { findInstalledSkill, warnSkillFallback } from './skill.js'
 import { exportDream } from './dream.js'
 
 export const name = 'bugwiki'
 export const inject = ['tools', 'systemPrompt']
 const integer = (value, description, max = Number.MAX_SAFE_INTEGER) => z.number().step(1).min(1).max(max).default(value).description(description).volatile()
 const text = (value, description) => z.string().default(value).description(description).volatile()
+const boolean = (value, description) => z.boolean().default(value).description(description).volatile()
 export const Config = z.object({
   wikiHome: text(defaults.wikiHome, 'Absolute wiki content directory; ~/ is expanded. Initialize it with the CLI before use.'),
   bashExecutable: text(defaults.bashExecutable, 'Absolute Bash executable. Requires Bash, rg and standard Unix tools.'),
@@ -23,6 +25,7 @@ export const Config = z.object({
   reportsKeep: integer(30, 'Number of housekeeping reports retained.'),
   factStaleDays: integer(90, 'Fact verification age in days.'),
   promotedStaleDays: integer(90, 'Promoted entry verification age in days.'),
+  followUpstreamSkill: boolean(false, 'Use the matching installed upstream SKILL.md as the only plugin prompt guidance when available. This cannot disable a skill loaded independently by DSH.'),
   prefix: text('', 'Literal guidance before Bugwiki instructions, analogous to DSH prompt prefix.'),
   suffix: text('', 'Literal guidance after Bugwiki instructions, analogous to DSH prompt suffix.'),
 })
@@ -67,7 +70,10 @@ function runtime(ctx, input) {
     execute: (args, exec) => exportDream(dreamCtx, config, args, { signal: exec.signal }),
   })), 'bugwiki.exportDream()')
   })
-  ctx.effect(() => ctx.systemPrompt.section({ name: 'bugwiki:guidance', order: 2350, text: guidance(config), interpolate: false }), 'bugwiki.guidance()')
+  const upstreamSkill = config.followUpstreamSkill ? findInstalledSkill('bugwiki') : null
+  const promptText = upstreamSkill?.status === 'found' ? upstreamSkill.content : guidance(config)
+  if (upstreamSkill && upstreamSkill.status !== 'found') warnSkillFallback('dsh-bugwiki', upstreamSkill)
+  ctx.effect(() => ctx.systemPrompt.section({ name: 'bugwiki:guidance', order: 2350, text: promptText, interpolate: false }), 'bugwiki.guidance()')
 }
 export async function apply(ctx, config) {
   const snapshot = () => Object.fromEntries(Object.entries(config).map(([key, ref]) => [key, ref.get()]))
