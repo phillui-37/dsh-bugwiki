@@ -2,7 +2,48 @@
 
 這是一個附有 Web 設定頁面的 DeepSeek Harness 外掛。主機外掛會讀取本機 Bugwiki Markdown 知識圖譜，並注入 DSH 專用的記憶使用指引。上游 [Bugwiki](https://github.com/phillui-37/bugwiki) 以 Git 子模組放在 `upstream/`，固定於提交 `d28e4cb755f327eb049e912417933ed985da5aac`；所有 DSH 整合程式都在本儲存庫，上游子模組維持原樣並保留 MIT 著作權聲明。
 
-[English](README.md) · [简体中文](README.zh-CN.md)
+[English](README.md) · [简体中文](README.zh-CN.md) · 繁體中文
+
+## 運作方式
+
+外掛載入時會註冊指引和工具，不會在背景定期維護知識庫。只有 Agent 呼叫工具後才會執行知識庫操作。只有 DSH 同時提供 `sessions` 與 `sessionPersistence` 服務時，才會註冊 dream 匯出工具。它只處理所選工作階段中的文字和工具事件，並排除系統指令、推理及二進位附件。
+
+### 架構圖
+
+```mermaid
+flowchart LR
+    Host["DSH 主機"] --> Plugin["dsh-bugwiki 外掛：提示詞與工具"]
+    Plugin --> Read["Node.js 直接讀取檔案"] --> Wiki["本機 Bugwiki 知識圖譜"]
+    Plugin --> Helper["Bash 呼叫固定版本上游腳本；停用 shell"] --> Wiki
+    Host -. 選用服務 .-> Sessions["DSH sessions 與 sessionPersistence"]
+    Plugin -. 明確呼叫匯出工具 .-> Sessions
+    Sessions --> Exporter["隨附 Python dream 匯出器"] --> Output["dryRun:false 時寫入所選原始輸入與水位標記"]
+```
+
+### 操作流程
+
+```mermaid
+flowchart TD
+    Load["外掛載入"] --> Register["註冊指引和 wiki 工具"]
+    Register --> Call{"Agent 呼叫工具？"}
+    Call -->|否| Idle["不執行知識庫命令"]
+    Call -->|是| Validate{"操作和路徑有效？"}
+    Validate -->|否| Error["回傳驗證錯誤"]
+    Validate -->|read| Direct["直接讀取本機檔案並限制輸出"]
+    Validate -->|其他操作| HelperRun["執行固定版本上游腳本；限制時間和輸出"]
+    Direct --> Result["回傳 JSON 結果"]
+    HelperRun --> Result
+    Register --> Services{"兩項 session 服務都可用？"}
+    Services -->|否| Unavailable["不註冊 dream 匯出工具"]
+    Services -->|是| Dream["註冊需明確指定工作階段的匯出工具"]
+    Dream --> IDs{"已提供明確的 session IDs？"}
+    IDs -->|否| Error
+    IDs -->|是| DryRun{"dryRun？預設 true"}
+    DryRun -->|是| Preview["試執行，不寫入匯出檔案"]
+    DryRun -->|否| Write["寫入所選原始輸入和水位標記"]
+    Preview --> Review["人工審閱後再提升至知識圖譜"]
+    Write --> Review
+```
 
 ## 系統需求與安裝
 

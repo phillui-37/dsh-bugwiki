@@ -2,7 +2,48 @@
 
 一个带 Web 设置页的 DeepSeek Harness 插件。它读取本地 Bugwiki Markdown 知识图谱，并向 DSH 注入针对 DSH 的记忆使用指南。上游 [Bugwiki](https://github.com/phillui-37/bugwiki) 以 Git 子模块形式放在 `upstream/`，固定在提交 `d28e4cb755f327eb049e912417933ed985da5aac`；所有 DSH 适配代码都在本仓库，上游子模块保持原样并保留 MIT 版权声明。
 
-[English](README.md) · [繁體中文](README.zh-TW.md)
+[English](README.md) · 简体中文 · [繁體中文](README.zh-TW.md)
+
+## 工作流程
+
+插件加载时注册指引和工具，不会在后台定期维护知识库。只有 Agent 调用工具后才执行知识库操作。仅当 DSH 同时提供 `sessions` 与 `sessionPersistence` 服务时，才会注册 dream 导出工具。它只处理所选会话中的文本和工具事件，并排除系统指令、推理及二进制附件。
+
+### 架构图
+
+```mermaid
+flowchart LR
+    Host["DSH 主机"] --> Plugin["dsh-bugwiki 插件：提示词与工具"]
+    Plugin --> Read["Node.js 直接读取文件"] --> Wiki["本地 Bugwiki 知识图谱"]
+    Plugin --> Helper["Bash 调用固定版本上游脚本；禁用 shell"] --> Wiki
+    Host -. 可选服务 .-> Sessions["DSH sessions 与 sessionPersistence"]
+    Plugin -. 明确调用导出工具 .-> Sessions
+    Sessions --> Exporter["随包 Python dream 导出器"] --> Output["dryRun:false 时写入所选原始输入与水位标记"]
+```
+
+### 操作流程
+
+```mermaid
+flowchart TD
+    Load["插件加载"] --> Register["注册指引和 wiki 工具"]
+    Register --> Call{"Agent 调用工具？"}
+    Call -->|否| Idle["不执行知识库命令"]
+    Call -->|是| Validate{"操作和路径有效？"}
+    Validate -->|否| Error["返回验证错误"]
+    Validate -->|read| Direct["直接读取本地文件并限制输出"]
+    Validate -->|其他操作| HelperRun["运行固定版本上游脚本；限制时长和输出"]
+    Direct --> Result["返回 JSON 结果"]
+    HelperRun --> Result
+    Register --> Services{"两项 session 服务都可用？"}
+    Services -->|否| Unavailable["不注册 dream 导出工具"]
+    Services -->|是| Dream["注册需明确指定会话的导出工具"]
+    Dream --> IDs{"已提供明确的 session IDs？"}
+    IDs -->|否| Error
+    IDs -->|是| DryRun{"dryRun？默认 true"}
+    DryRun -->|是| Preview["试运行，不写入导出文件"]
+    DryRun -->|否| Write["写入所选原始输入和水位标记"]
+    Preview --> Review["人工审阅后再提升到知识图谱"]
+    Write --> Review
+```
 
 ## 系统要求与安装
 
