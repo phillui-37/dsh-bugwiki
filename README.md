@@ -2,6 +2,49 @@
 
 A DeepSeek Harness plugin with a small web settings client. The host plugin reads a local Bugwiki Markdown graph and injects DSH-specific memory guidance. It can optionally detect and use the matching installed upstream `SKILL.md` instead of its own prompt guidance. It reuses the committed [Bugwiki upstream](https://github.com/phillui-37/bugwiki) as the `upstream/` Git submodule, pinned to `d28e4cb755f327eb049e912417933ed985da5aac`. All adaptation lives in this repository. The submodule stays unchanged, including its MIT copyright notice.
 
+English · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md)
+
+## How it works
+
+Loading the plugin registers its guidance and tools; it does not run wiki maintenance in the background. Wiki operations start only when an agent calls a tool. Dream export is registered only when both DSH session services are available. It processes selected session text and tool events, excluding system instructions, reasoning, and binary attachments.
+
+### Architecture
+
+```mermaid
+flowchart LR
+    Host["DSH host"] --> Plugin["dsh-bugwiki plugin: guidance and tools"]
+    Plugin --> Read["Node.js direct file read"] --> Wiki["Local Bugwiki graph"]
+    Plugin --> Helper["Pinned upstream helper via Bash; shell disabled"] --> Wiki
+    Host -. optional services .-> Sessions["DSH sessions and sessionPersistence"]
+    Plugin -. explicit export tool .-> Sessions
+    Sessions --> Exporter["Bundled Python dream exporter"] --> Output["Optional raw input export and watermark"]
+```
+
+### Operation flow
+
+```mermaid
+flowchart TD
+    Load["Plugin loads"] --> Register["Register guidance and wiki tool"]
+    Register --> Call{"Agent calls a tool?"}
+    Call -->|No| Idle["No wiki command runs"]
+    Call -->|Yes| Validate{"Action and path valid?"}
+    Validate -->|No| Error["Return validation error"]
+    Validate -->|read| Direct["Read local file; bound output"]
+    Validate -->|other action| HelperRun["Run pinned helper; bound time and output"]
+    Direct --> Result["Return JSON result"]
+    HelperRun --> Result
+    Register --> Services{"Both session services available?"}
+    Services -->|No| Unavailable["Dream export tool not registered"]
+    Services -->|Yes| Dream["Register explicit-session export"]
+    Dream --> IDs{"Explicit session IDs supplied?"}
+    IDs -->|No| Error
+    IDs -->|Yes| DryRun{"dryRun? Default true"}
+    DryRun -->|Yes| Preview["Run without writing export files"]
+    DryRun -->|No| Write["Write selected raw inputs and watermark"]
+    Preview --> Review["Human review before graph promotion"]
+    Write --> Review
+```
+
 ## Requirements and installation
 
 DSH `>=0.2 <0.3`, Node.js 22 or newer, macOS, Bash, ripgrep (`rg`), and standard Unix commands. This MVP is validated on macOS; upstream date handling uses BSD `date`, so Linux and Windows support is not claimed.
